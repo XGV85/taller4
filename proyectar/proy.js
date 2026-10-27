@@ -10,6 +10,7 @@ function marco(din, titulo, alRecibir, extrasPie) {
       <img class="logos" src="../img/logos.png" alt="Secretaría de las Mujeres · Centro LIBRE · Instituto Hidalguense de las Mujeres">
       <h1>${esc(titulo)}</h1>
       <div class="meta"><b id="cuenta">0</b>participantes</div>
+      <img class="qr-mini" id="qr-mini" src="../img/qr-${din}.png" alt="QR para participar" title="Clic para ampliar el QR">
     </div>`);
   document.body.insertAdjacentHTML("beforeend", `
     <div class="proy-pie">
@@ -26,14 +27,21 @@ function marco(din, titulo, alRecibir, extrasPie) {
       <div class="txt">
         <p>Escanee el código con la cámara de su celular o entre a:</p>
         <p class="url">${esc(corta)}</p>
-        <p class="peq">Respuestas anónimas. Clic o tecla Q para continuar.</p>
+        <p class="peq">Respuestas anónimas.</p>
+        <button class="btn-ver" id="b-ver-res">Ver resultados en vivo ▶</button>
       </div>
     </div>`);
 
   const capa = document.getElementById("capa-qr");
-  const alternarQR = () => capa.classList.toggle("oculto");
+  const bqr = document.getElementById("b-qr");
+  const alternarQR = () => {
+    capa.classList.toggle("oculto");
+    bqr.textContent = capa.classList.contains("oculto") ? "Mostrar QR" : "Ver resultados";
+  };
   capa.onclick = alternarQR;
-  document.getElementById("b-qr").onclick = alternarQR;
+  bqr.onclick = alternarQR;
+  bqr.textContent = "Ver resultados";
+  document.getElementById("qr-mini").onclick = alternarQR;
   const pc = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
   document.getElementById("b-pc").onclick = pc;
   document.addEventListener("keydown", e => {

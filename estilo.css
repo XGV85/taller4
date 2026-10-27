@@ -155,3 +155,11 @@ textarea { min-height: 84px; resize: vertical; }
   .capa-qr { flex-direction: column; gap: 20px; }
   .frase-grande { font-size: 1.8rem; }
 }
+
+/* Acceso visible a los resultados y QR pequeño siempre a la vista */
+.btn-ver {
+  margin-top: 18px; padding: 16px 28px; border: 0; border-radius: 10px; background: var(--dorado);
+  color: var(--guinda-osc); font-weight: 800; font-size: 1.3rem;
+}
+.btn-ver:hover { background: #fff; }
+.proy-top img.qr-mini { height: 62px; width: 62px; cursor: pointer; border: 1px solid var(--linea); border-radius: 6px; padding: 3px; background: #fff; }
