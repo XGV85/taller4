@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proyectar · Un caso: señales y plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../estilo.css">
+<style>
+  .proy-main { align-content: start; }
+  .tarjeta .x { margin-left: 8px; border: 0; background: none; color: inherit; opacity: .45; }
+  .tarjeta .x:hover { opacity: 1; }
+  .senales-panel .barra-et { font-size: 1.25rem; }
+  .senales-panel .barra-fondo { height: 22px; border-radius: 11px; }
+  .nota-proto { font-size: 1.15rem; font-weight: 600; color: var(--guinda); margin-top: 18px; }
+</style>
+</head>
+<body>
+<main class="proy-main" id="vista"></main>
+
+<script src="../datos.js"></script>
+<script src="../comun.js"></script>
+<script src="proy.js"></script>
+<script>
+const C = T4.caso;
+const senales = new Map();   // u → [ids]
+const ideas = [];            // {id, c, t}
+const personas = new Set();
+const ocultas = new Set(JSON.parse(localStorage.getItem("t4-ocultas-caso") || "[]"));
+const destacadas = new Set();
+let pest = 1;
+let pendiente = false;
+
+function vista1() {
+  return `<section class="panel caso-proy">
+    ${C.texto.map(p => `<p>${esc(p)}</p>`).join("")}
+    <p class="leyenda">${esc(C.aviso)}</p>
+  </section>`;
+}
+function vista2() {
+  const tot = senales.size;
+  const items = C.senales.map(s => ({ t: s.t, n: [...senales.values()].filter(a => a.includes(s.id)).length }));
+  return `<section class="panel senales-panel">
+    <h2>¿Qué señales de riesgo identificamos? · ${tot} ${tot === 1 ? "respuesta" : "respuestas"}</h2>
+    ${barras(items, tot)}
+    <p class="nota-proto">Las seis señales están presentes en el caso. La valoración del riesgo se hace siempre con las herramientas y el procedimiento de los protocolos del Instituto.</p>
+  </section>`;
+}
+function vista3() {
+  return `<div class="tablero">${C.columnas.map(col => {
+    const lista = ideas.filter(x => x.c === col.id && !ocultas.has(x.id));
+    return `<div class="columna"><h3>${esc(col.t)}<span class="n">${lista.length}</span></h3>
+      <div class="tarjetas">${lista.map(x =>
+        `<div class="tarjeta${destacadas.has(x.id) ? " destacada" : ""}" data-k="${esc(x.id)}">${esc(x.t)}<button class="x" data-o="${esc(x.id)}" title="Ocultar">✕</button></div>`).join("")}</div>
+    </div>`;
+  }).join("")}</div>
+  <p class="leyenda">Preguntas cortas para construir el plan con ella por teléfono. Clic en una tarjeta para destacarla · ✕ para ocultarla.</p>`;
+}
+
+function pintar() {
+  pendiente = false;
+  ui.contador(personas.size);
+  document.getElementById("vista").innerHTML = pest === 1 ? vista1() : pest === 2 ? vista2() : vista3();
+  [1, 2, 3].forEach(n => document.getElementById("p" + n).classList.toggle("activo", pest === n));
+}
+const pedir = () => { if (!pendiente) { pendiente = true; requestAnimationFrame(pintar); } };
+
+const ui = marco("caso", C.titulo, (d, m) => {
+  personas.add(d.u);
+  if (d.k === "senales" && Array.isArray(d.s)) senales.set(d.u, d.s);
+  if (d.k === "idea" && d.t && C.columnas.some(c => c.id === d.c)) ideas.push({ id: m.id, c: d.c, t: String(d.t) });
+  pedir();
+}, `
+  <button class="ctrl" id="p1" title="Tecla 1">1 · Caso</button>
+  <button class="ctrl" id="p2" title="Tecla 2">2 · Señales</button>
+  <button class="ctrl" id="p3" title="Tecla 3">3 · Plan de seguridad</button>`);
+
+[1, 2, 3].forEach(n => document.getElementById("p" + n).onclick = () => { pest = n; pintar(); });
+document.addEventListener("keydown", e => { if (["1", "2", "3"].includes(e.key)) { pest = +e.key; pintar(); } });
+document.getElementById("vista").addEventListener("click", e => {
+  const o = e.target.closest("[data-o]");
+  if (o) {
+    ocultas.add(o.dataset.o);
+    localStorage.setItem("t4-ocultas-caso", JSON.stringify([...ocultas]));
+    return pintar();
+  }
+  const t = e.target.closest(".tarjeta");
+  if (t) { destacadas.has(t.dataset.k) ? destacadas.delete(t.dataset.k) : destacadas.add(t.dataset.k); pintar(); }
+});
+pintar();
+</script>
+</body>
+</html>

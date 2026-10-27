@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proyectar · ¿Quiénes estamos hoy?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../estilo.css">
+<style>
+  .proy-main { grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto 1fr; }
+  .ancho { grid-column: span 3; display: grid; grid-template-columns: 1fr 1.4fr; gap: 18px; }
+  .nube { font-size: 1.2rem; }
+</style>
+</head>
+<body>
+<main class="proy-main">
+  <section class="panel"><h2>Perfil</h2><div id="g-perfil"></div></section>
+  <section class="panel"><h2>Tiempo acompañando a mujeres</h2><div id="g-exp"></div></section>
+  <section class="panel"><h2>¿Atendió a una mujer en crisis en el último mes?</h2><div id="g-crisis"></div></section>
+  <div class="ancho">
+    <section class="panel"><h2>Desde dónde nos conectamos</h2><div class="nube" id="n-municipio"></div></section>
+    <section class="panel"><h2>Cómo llegamos hoy</h2><div class="nube" id="n-palabra"></div></section>
+  </div>
+</main>
+
+<script src="../datos.js"></script>
+<script src="../comun.js"></script>
+<script src="proy.js"></script>
+<script>
+const porPersona = new Map();
+const P = T4.inicio.preguntas;
+let pendiente = false;
+
+function pintar() {
+  pendiente = false;
+  const todas = [...porPersona.values()];
+  ui.contador(todas.length);
+  for (const p of P) {
+    if (p.tipo === "opcion") {
+      const con = todas.filter(r => r[p.id]);
+      const items = p.opciones.map(o => ({ t: o, n: con.filter(r => r[p.id] === o).length }));
+      document.getElementById("g-" + p.id).innerHTML = barras(items, con.length);
+    } else {
+      document.getElementById("n-" + p.id).innerHTML = nube(todas.map(r => r[p.id]).filter(Boolean));
+    }
+  }
+}
+const ui = marco("inicio", T4.inicio.titulo, d => {
+  porPersona.set(d.u, d);
+  if (!pendiente) { pendiente = true; requestAnimationFrame(pintar); }
+});
+pintar();
+</script>
+</body>
+</html>

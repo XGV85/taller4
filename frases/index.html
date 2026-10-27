@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Ayuda o daña? · Taller 4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../estilo.css">
+</head>
+<body>
+<main class="part">
+  <header>
+    <div class="sobre">Taller 4 · Intervención en crisis</div>
+    <h1>¿Ayuda o daña?</h1>
+    <p class="nota">Son frases que suelen decirse a las mujeres. Marque si ayudan o dañan. Si una frase daña, puede reescribirla como usted la diría. Respuestas anónimas.</p>
+  </header>
+
+  <form id="form" novalidate></form>
+
+  <section id="listo" class="bloque listo oculto" aria-live="polite">
+    <h2>¡Gracias!</h2>
+    <p>Ahora las revisamos juntas en la pantalla compartida.</p>
+    <button type="button" class="btn sec" id="otra">Cambiar mis respuestas</button>
+  </section>
+</main>
+
+<script src="../datos.js"></script>
+<script src="../comun.js"></script>
+<script>
+const form = document.getElementById("form");
+const votos = {};
+
+form.innerHTML = T4.frases.lista.map((f, i) => `
+  <div class="bloque" role="group" aria-label="Frase ${i + 1}">
+    <p class="frase"><span class="num">${i + 1}</span>${esc(f.t)}</p>
+    <div class="dos">
+      <button type="button" class="opcion ayuda-op" aria-pressed="false" data-i="${i}" data-v="a">Ayuda</button>
+      <button type="button" class="opcion dana" aria-pressed="false" data-i="${i}" data-v="d">Daña</button>
+    </div>
+    <div class="reescribe oculto" id="r-${i}">
+      <label for="t-${i}">¿Cómo la diría usted? (opcional)</label>
+      <textarea id="t-${i}" maxlength="160"></textarea>
+    </div>
+  </div>`).join("") +
+  `<button type="submit" class="btn" id="enviar">Enviar mis respuestas</button><p class="aviso-error oculto" id="error"></p>`;
+
+form.addEventListener("click", e => {
+  const b = e.target.closest(".opcion");
+  if (!b) return;
+  const i = b.dataset.i;
+  form.querySelectorAll(`.opcion[data-i="${i}"]`).forEach(x => x.setAttribute("aria-pressed", "false"));
+  b.setAttribute("aria-pressed", "true");
+  votos[i] = b.dataset.v;
+  document.getElementById("r-" + i).classList.toggle("oculto", b.dataset.v !== "d");
+});
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  const err = document.getElementById("error");
+  if (!Object.keys(votos).length) {
+    err.textContent = "Marque al menos una frase.";
+    err.classList.remove("oculto");
+    return;
+  }
+  const r = {};
+  for (const i in votos) {
+    const t = document.getElementById("t-" + i).value.trim();
+    if (votos[i] === "d" && t) r[i] = t;
+  }
+  const btn = document.getElementById("enviar");
+  btn.disabled = true; btn.textContent = "Enviando…";
+  const ok = await enviar("frases", { v: votos, r });
+  btn.disabled = false; btn.textContent = "Enviar mis respuestas";
+  if (!ok) {
+    err.textContent = "No se pudo enviar. Revise su conexión e intente de nuevo.";
+    err.classList.remove("oculto");
+    return;
+  }
+  err.classList.add("oculto");
+  form.classList.add("oculto");
+  document.getElementById("listo").classList.remove("oculto");
+  window.scrollTo(0, 0);
+});
+
+document.getElementById("otra").onclick = () => {
+  document.getElementById("listo").classList.add("oculto");
+  form.classList.remove("oculto");
+};
+</script>
+</body>
+</html>

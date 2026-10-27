@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Quiénes estamos hoy? · Taller 4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../estilo.css">
+</head>
+<body>
+<main class="part">
+  <header>
+    <div class="sobre">Taller 4 · Intervención en crisis</div>
+    <h1>¿Quiénes estamos hoy?</h1>
+    <p class="nota">Respuestas anónimas. Toma menos de un minuto.</p>
+  </header>
+
+  <form id="form" novalidate></form>
+
+  <section id="listo" class="bloque listo oculto" aria-live="polite">
+    <h2>¡Gracias!</h2>
+    <p>Su respuesta ya aparece en la pantalla compartida.</p>
+    <button type="button" class="btn sec" id="otra">Corregir mi respuesta</button>
+  </section>
+</main>
+
+<script src="../datos.js"></script>
+<script src="../comun.js"></script>
+<script>
+const form = document.getElementById("form");
+const resp = {};
+
+form.innerHTML = T4.inicio.preguntas.map((p, i) => {
+  const cab = `<h2><span class="num">${i + 1}</span>${esc(p.texto)}</h2>`;
+  if (p.tipo === "opcion") {
+    return `<div class="bloque" role="group" aria-label="${esc(p.texto)}">${cab}
+      <div class="opciones">${p.opciones.map(o =>
+        `<button type="button" class="opcion" aria-pressed="false" data-p="${p.id}" data-v="${esc(o)}">${esc(o)}</button>`).join("")}
+      </div></div>`;
+  }
+  return `<div class="bloque"><label for="c-${p.id}">${cab}</label>
+    <input type="text" id="c-${p.id}" data-p="${p.id}" maxlength="${p.max}" autocomplete="off">
+    <p class="ayuda">${esc(p.ayuda)}</p></div>`;
+}).join("") + `<button type="submit" class="btn" id="enviar">Enviar</button><p class="aviso-error oculto" id="error"></p>`;
+
+form.addEventListener("click", e => {
+  const b = e.target.closest(".opcion");
+  if (!b) return;
+  form.querySelectorAll(`.opcion[data-p="${b.dataset.p}"]`).forEach(x => x.setAttribute("aria-pressed", "false"));
+  b.setAttribute("aria-pressed", "true");
+  resp[b.dataset.p] = b.dataset.v;
+});
+
+form.addEventListener("submit", async e => {
+  e.preventDefault();
+  form.querySelectorAll("input[type=text]").forEach(x => {
+    let v = x.value.trim();
+    if (x.dataset.p === "palabra") v = v.split(/\s+/)[0] || "";
+    resp[x.dataset.p] = v;
+  });
+  const err = document.getElementById("error");
+  if (!Object.values(resp).some(v => v)) {
+    err.textContent = "Responda al menos una pregunta.";
+    err.classList.remove("oculto");
+    return;
+  }
+  const btn = document.getElementById("enviar");
+  btn.disabled = true; btn.textContent = "Enviando…";
+  const ok = await enviar("inicio", resp);
+  btn.disabled = false; btn.textContent = "Enviar";
+  if (!ok) {
+    err.textContent = "No se pudo enviar. Revise su conexión e intente de nuevo.";
+    err.classList.remove("oculto");
+    return;
+  }
+  err.classList.add("oculto");
+  form.classList.add("oculto");
+  document.getElementById("listo").classList.remove("oculto");
+});
+
+document.getElementById("otra").onclick = () => {
+  document.getElementById("listo").classList.add("oculto");
+  form.classList.remove("oculto");
+};
+</script>
+</body>
+</html>

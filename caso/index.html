@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Un caso: señales y plan · Taller 4</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../estilo.css">
+</head>
+<body>
+<main class="part">
+  <header>
+    <div class="sobre">Taller 4 · Evaluación del riesgo</div>
+    <h1>Un caso: señales de riesgo y plan de seguridad</h1>
+    <p class="nota">Respuestas anónimas. No escriba nombres ni datos de mujeres que haya atendido.</p>
+  </header>
+
+  <section class="bloque caso" id="caso"></section>
+
+  <!-- Parte 1 -->
+  <form id="f1" class="bloque" novalidate>
+    <h2><span class="num">1</span>¿Qué señales de riesgo identifica en esta llamada?</h2>
+    <p class="ayuda" style="margin:-4px 0 8px">Marque todas las que escuche.</p>
+    <div id="senales"></div>
+    <button type="submit" class="btn" id="b1">Enviar señales</button>
+    <p class="aviso-error oculto" id="e1"></p>
+    <p class="nota oculto" id="ok1">✓ Enviado. Puede cambiar sus marcas y volver a enviar.</p>
+  </form>
+
+  <!-- Parte 2 -->
+  <form id="f2" class="bloque" novalidate>
+    <h2><span class="num">2</span>Plan de seguridad: ¿qué pregunta corta le haría?</h2>
+    <p class="ayuda" style="margin:-4px 0 10px">Ella tiene pocos minutos y puede ser escuchada. Elija un tema y escriba una pregunta o idea. Puede enviar varias.</p>
+    <div class="opciones" id="cols"></div>
+    <label for="idea" class="oculto">Su pregunta o idea</label>
+    <textarea id="idea" maxlength="160" placeholder="Por ejemplo: ¿Hay alguien a quien pueda avisarle si necesita salir?" style="margin-top:10px"></textarea>
+    <button type="submit" class="btn" id="b2">Enviar al tablero</button>
+    <p class="aviso-error oculto" id="e2"></p>
+    <ul class="enviados" id="lista"></ul>
+  </form>
+</main>
+
+<script src="../datos.js"></script>
+<script src="../comun.js"></script>
+<script>
+const C = T4.caso;
+document.getElementById("caso").innerHTML =
+  C.texto.map(p => `<p>${esc(p)}</p>`).join("") + `<p class="ficticio">${esc(C.aviso)}</p>`;
+
+document.getElementById("senales").innerHTML = C.senales.map(s =>
+  `<label class="check"><input type="checkbox" value="${s.id}"><span>${esc(s.t)}</span></label>`).join("");
+
+let col = null;
+const cols = document.getElementById("cols");
+cols.innerHTML = C.columnas.map(c =>
+  `<button type="button" class="opcion" aria-pressed="false" data-c="${c.id}">${esc(c.t)}</button>`).join("");
+cols.addEventListener("click", e => {
+  const b = e.target.closest(".opcion");
+  if (!b) return;
+  cols.querySelectorAll(".opcion").forEach(x => x.setAttribute("aria-pressed", "false"));
+  b.setAttribute("aria-pressed", "true");
+  col = b.dataset.c;
+});
+
+function mensaje(id, txt) {
+  const el = document.getElementById(id);
+  el.textContent = txt;
+  el.classList.toggle("oculto", !txt);
+}
+
+document.getElementById("f1").addEventListener("submit", async e => {
+  e.preventDefault();
+  const s = [...document.querySelectorAll("#senales input:checked")].map(x => x.value);
+  if (!s.length) return mensaje("e1", "Marque al menos una señal.");
+  mensaje("e1", "");
+  const b = document.getElementById("b1");
+  b.disabled = true; b.textContent = "Enviando…";
+  const ok = await enviar("caso", { k: "senales", s });
+  b.disabled = false; b.textContent = "Enviar señales";
+  if (!ok) return mensaje("e1", "No se pudo enviar. Revise su conexión e intente de nuevo.");
+  document.getElementById("ok1").classList.remove("oculto");
+});
+
+document.getElementById("f2").addEventListener("submit", async e => {
+  e.preventDefault();
+  const t = document.getElementById("idea").value.trim();
+  if (!col) return mensaje("e2", "Elija primero un tema.");
+  if (!t) return mensaje("e2", "Escriba su pregunta o idea.");
+  mensaje("e2", "");
+  const b = document.getElementById("b2");
+  b.disabled = true; b.textContent = "Enviando…";
+  const ok = await enviar("caso", { k: "idea", c: col, t });
+  b.disabled = false; b.textContent = "Enviar al tablero";
+  if (!ok) return mensaje("e2", "No se pudo enviar. Revise su conexión e intente de nuevo.");
+  const nombre = C.columnas.find(c => c.id === col).t;
+  document.getElementById("lista").insertAdjacentHTML("afterbegin", `<li>✓ <b>${esc(nombre)}:</b> ${esc(t)}</li>`);
+  document.getElementById("idea").value = "";
+});
+</script>
+</body>
+</html>
